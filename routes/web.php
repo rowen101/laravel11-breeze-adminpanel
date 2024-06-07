@@ -6,7 +6,7 @@ use Illuminate\Foundation\Application;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminAuthController;
-
+use App\Http\Controllers\Admin\ProductController;
 
 //user route
 Route::get('/', function () {
@@ -35,10 +35,12 @@ Route::middleware('auth')->group(function () {
     Route::group(['prefix' => 'admin','middleware' => 'redirectAdmin'], function(){
         Route::get('login',[AdminAuthController::class,'showLoginForm'])->name('admin.login');
         Route::post('login',[AdminAuthController::class,'login'])->name('admin.login.post');
-        Route::post('logout',[AdminAuthController::class,'logout'])->name('admin.logout');
+        Route::post('logout',[AdminAuthController::class,'logout'])->name('logout');
     });
     Route::middleware(['auth','admin'])->prefix('admin')->group(function (){
         Route::get('/dashboard',[AdminController::class,'index'])->name('admin.dashboard');
+
+        Route::get('/products',[ProductController::class,'index'])->name('admin.product.index');
     });
 
 //end admin route
