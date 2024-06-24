@@ -172,6 +172,7 @@
                                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                                     placeholder="Search"
                                     required=""
+                                      v-model="searchTerm"
                                 />
                             </div>
                         </form>
@@ -372,10 +373,39 @@
                             class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"
                         >
                             <tr>
-                                <th scope="col" class="px-4 py-3">
-                                    Product name
+                                <th scope="col" class="cursor-pointer px-4 py-3">
+                                    <div class="flex items-center">
+                                    <h2 @click="sortData('title')">
+                                        Product Name
+                                    </h2>
+
+                                    <ArrowLongDownIcon
+                                        class="size-6"
+                                        v-if="sortStates.errorRate === 'desc'"
+                                    />
+                                    <ArrowLongUpIcon
+                                        class="size-6"
+                                        v-if="sortStates.errorRate === 'asc'"
+                                    />
+                                </div>
                                 </th>
-                                <th scope="col" class="px-4 py-3">Category</th>
+                                <th scope="col" class="cursor-pointer px-4 py-3">
+
+                                    <div class="flex items-center">
+                                    <h2 @click="sortData('category_id')">
+                                        Category
+                                    </h2>
+
+                                    <ArrowLongDownIcon
+                                        class="size-6"
+                                        v-if="sortStates.errorRate === 'desc'"
+                                    />
+                                    <ArrowLongUpIcon
+                                        class="size-6"
+                                        v-if="sortStates.errorRate === 'asc'"
+                                    />
+                                </div>
+                                </th>
                                 <th scope="col" class="px-4 py-3">Brand</th>
                                 <th scope="col" class="px-4 py-3">Quantity</th>
                                 <th scope="col" class="px-4 py-3">Price</th>
@@ -597,12 +627,26 @@
 </template>
 <script setup>
 import { usePage, router } from "@inertiajs/vue3";
-import { ref } from "vue";
+import { ref,computed , watchEffect } from 'vue'
+import {
+    ArrowDownTrayIcon,
+    ArrowLongDownIcon,
+    ArrowLongUpIcon,
+    ChevronDoubleLeftIcon,
+    ChevronDoubleRightIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    DocumentIcon,
+    FunnelIcon,
+    BeakerIcon,
+    DocumentPlusIcon
+} from "@heroicons/vue/24/solid";
 
-defineProps({
-    products: Array,
-});
-// const products = usePage().props.products
+// Assume products is being passed as a prop
+const props = defineProps({
+  products: Array
+})
+const products = usePage().props.products
 const categories = usePage().props.categories;
 const brands = usePage().props.brands;
 
@@ -733,4 +777,75 @@ const deleteProduct = (product, index) => {
 
     });
 };
+
+const searchTerm = ref("");
+// Search Functionality
+
+const filteredData = computed(() => {
+    return apiMonitoringData.value.filter((api) => {
+        return (
+            api.title
+                .toLowerCase()
+                .includes(searchTerm.value.toLowerCase())
+        );
+    });
+});
+// Duplicated Data For Sorting & Filtering
+
+// Create a reactive copy of the products array
+const originalData = ref([...props.products])
+// Sorting Related
+
+const sortStates = ref({
+    title: "unsorted",
+    price: "unsorted",
+    quantity: "unsorted",
+    description: "unsorted",
+    published: "unsorted",
+    category_id: "unsorted",
+    brand_id: "unsorted",
+});
+
+function sortData(column) {
+    sortStates.value[column] =
+        sortStates.value[column] === "asc"
+            ? "desc"
+            : sortStates.value[column] === "desc"
+            ? "unsorted"
+            : "asc";
+
+    for (const col in sortStates.value) {
+        if (col !== column) {
+            sortStates.value[col] = "unsorted";
+        }
+    }
+
+    if (sortStates.value[column] === "unsorted") {
+        products.value = [...originalData.value];
+    } else {
+        products.value.sort((a, b) => {
+            let valueA = a[column];
+            let valueB = b[column];
+
+            if (typeof valueA === "number") {
+                valueA = parseFloat(valueA);
+                valueB = parseFloat(valueB);
+            } else {
+                valueA = valueA.toLowerCase();
+                valueB = valueB.toLowerCase();
+            }
+
+            if (sortStates.value[column] === "asc") {
+                return valueA < valueB ? -1 : 1;
+            } else if (sortStates.value[column] === "desc") {
+                return valueA > valueB ? -1 : 1;
+            }
+        });
+    }
+}
+
+// If products prop changes, update originalData accordingly
+watchEffect(() => {
+  originalData.value = [...props.products]
+})
 </script>
